@@ -1,9 +1,7 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
-import { ApiInfoController } from './api-info.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ChallengesModule } from './challenges/challenges.module';
@@ -22,6 +20,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
 import { LessonModule } from './lessons/lesson.module';
 import { TaskModule } from './tasks/task.module';
 import { CourseModule } from './courses';
+import { JobsModule } from './jobs/jobs.module';
 import { LoggingModule } from './logging/logging.module';
 import { ProgressModule } from './courses/progress/progress.module';
 import { AppConfigModule } from './config/config.module';
@@ -30,25 +29,20 @@ import { PathfindingModule } from './pathfinding/pathfinding.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { SearchModule } from './search/search.module';
 import { PaymentsModule } from './payments/payments.module';
-import { I18nModule } from './i18n/i18n.module';
-import { DatabaseModule } from './database/database.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { ReportsModule } from './reports/reports.module';
+import { BadgesModule } from './badges/badges.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        limit: 10,
+        ttl: 60_000,
+      },
+    ]),
     AppConfigModule,
-    ThrottlerModule.forRootAsync({
-      inject: [ConfigService],
-      // Values come from the validated env schema so local and container
-      // deployments always agree on types and defaults.
-      useFactory: (config: ConfigService) => [
-        {
-          limit: config.get<number>('THROTTLE_LIMIT', 10),
-          ttl: config.get<number>('THROTTLE_TTL_MS', 60_000),
-        },
-      ],
-    }),
     AuthModule,
     ContractsModule,
     UserProfileModule,
@@ -58,6 +52,7 @@ import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
     SecurityModule,
     ChallengesModule,
     AiModule,
+    ContractsModule,
     LeaderboardModule,
     AnalyticsModule,
     WalletModule,
@@ -67,16 +62,19 @@ import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
     TaskModule,
     CourseModule,
     AssetsModule,
+    JobsModule,
     LoggingModule,
     PathfindingModule,
     MonitoringModule,
     ProgressModule,
     SearchModule,
     PaymentsModule,
-    I18nModule,
+    SessionsModule,
+    ReportsModule,
+    BadgesModule,
     NotificationsModule,
   ],
-  controllers: [AppController, ApiInfoController],
+  controllers: [AppController],
   providers: [
     AppService,
     {
@@ -85,9 +83,4 @@ import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
     },
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
-  }
-}
 export class AppModule {}
